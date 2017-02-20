@@ -3,4 +3,34 @@
     <string name="action_settings">Settings</string>
 
     <string name="button_click">Click me</string>
+
+    <!-- Toolbar Titles -->
+    <string name="title_create_account">Create Account</string>
+    <string name="title_sign_in">Sign In</string>
+
+    <!-- Button Text -->
+    <string name="button_register">Register</string>
+    <string name="button_sign_up">Sign Up</string>
+
+    <!-- Error Messages -->
+    <string name="error_message_invalid_email">Email is invalid</string>
+    <string name="error_message_invalid_password">Password must be at least 6 characters</string>
+    <string name="error_message_password_different">Password don\'t match</string>
+    <string name="error_invalid_password">This password is too short</string>
+    <string name="error_incorrect_password">This password is incorrect</string>
+    <string name="error_field_required">This field is required</string>
+
+
+    <!-- Hints -->
+    <string name="hint_full_names">Full Names</string>
+    <string name="hint_email">Email</string>
+    <string name="hint_password">Password</string>
+    <string name="hint_confirm_password">Confirm Password</string>
+
+    <!-- String Texts -->
+    <string name="str_account_exists">Already have an account?</string>
+    <string name="str_sign_in">Sign In</string>
+    <string name="str_register">Register</string>
+    <string name="str_no_account">Don\'t have an account?</string>
+    <string name="str_forgot_password">Forgot Password</string>
 </resources>

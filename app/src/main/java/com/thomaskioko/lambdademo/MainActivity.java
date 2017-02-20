@@ -10,6 +10,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 
+import com.jakewharton.rxbinding.view.RxView;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
@@ -29,12 +31,14 @@ public class MainActivity extends AppCompatActivity {
         ButterKnife.bind(this);
         setSupportActionBar(mToolBar);
 
+        RxView.clicks(mFloatingActionButton)
+                .subscribe(aVoid -> {
+                    Snackbar.make(mFloatingActionButton, "Lambdas Rock", Snackbar.LENGTH_LONG)
+                            .setAction("Action", null).show();
+                });
 
-        mFloatingActionButton.setOnClickListener(view -> Snackbar.make(view, "Lambdas Rock", Snackbar.LENGTH_LONG)
-                .setAction("Action", null).show());
-
-        //Method reference
-        mButtonClick.setOnClickListener(this::showSnackBar);
+        RxView.clicks(mButtonClick)
+                .subscribe(aVoid -> showSnackBar(mButtonClick));
     }
 
     @Override

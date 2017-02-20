@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <integer name="max_text_length">20</integer>
+    <integer name="email_length">35</integer>
+    <integer name="debounce_length">400</integer>
+</resources>
