@@ -10,9 +10,10 @@
 
     <!-- Button Text -->
     <string name="button_register">Register</string>
-    <string name="button_sign_up">Sign Up</string>
+    <string name="button_sign_in">Sign In</string>
 
     <!-- Error Messages -->
+    <string name="error_message_invalid_names">Name is invalid</string>
     <string name="error_message_invalid_email">Email is invalid</string>
     <string name="error_message_invalid_password">Password must be at least 6 characters</string>
     <string name="error_message_password_different">Password don\'t match</string>
