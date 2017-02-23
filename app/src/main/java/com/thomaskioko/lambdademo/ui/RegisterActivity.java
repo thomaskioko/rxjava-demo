@@ -16,6 +16,7 @@ import com.jakewharton.rxbinding.view.RxView;
 import com.jakewharton.rxbinding.widget.RxTextView;
 import com.thomaskioko.lambdademo.R;
 import com.thomaskioko.lambdademo.data.RealmManager;
+import com.thomaskioko.lambdademo.model.User;
 
 import java.util.concurrent.TimeUnit;
 
@@ -79,10 +80,14 @@ public class RegisterActivity extends AppCompatActivity {
         ButterKnife.bind(this);
 
         setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
+
 
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
             actionBar.setTitle(getString(R.string.title_create_account));
+            actionBar.setHomeButtonEnabled(true);
         }
 
         mRealm = RealmManager.with(this).getRealm();
