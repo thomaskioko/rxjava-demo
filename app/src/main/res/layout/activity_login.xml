@@ -1,6 +1,5 @@
 <android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main_content"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
@@ -26,6 +25,7 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_gravity="center"
                     android:focusable="true"
                     android:focusableInTouchMode="true"
                     android:orientation="vertical">
@@ -37,12 +37,14 @@
                         android:layout_marginLeft="56dp"
                         android:layout_marginRight="56dp"
                         android:layout_marginTop="16dp"
+                        android:fontFamily="sans-serif-condensed"
                         android:textColorHint="@color/grey_500">
 
                         <EditText
                             android:id="@+id/et_email"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-condensed"
                             android:hint="@string/hint_email"
                             android:inputType="textEmailAddress"
                             android:maxLength="@integer/email_length"
@@ -58,12 +60,16 @@
                         android:layout_marginLeft="56dp"
                         android:layout_marginRight="56dp"
                         android:layout_marginTop="8dp"
+                        android:fontFamily="sans-serif-condensed"
+                        app:passwordToggleEnabled="true"
+                        app:passwordToggleTint="@color/colorAccent"
                         android:textColorHint="@color/grey_500">
 
                         <EditText
                             android:id="@+id/et_password"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-condensed"
                             android:hint="@string/hint_password"
                             android:inputType="textPassword"
                             android:maxLength="@integer/max_text_length"
@@ -80,6 +86,7 @@
                         android:layout_marginLeft="48dp"
                         android:layout_marginStart="48dp"
                         android:layout_marginTop="8dp"
+                        android:fontFamily="sans-serif-condensed"
                         android:text="@string/str_forgot_password"
                         android:textColor="@color/colorPrimary"
                         android:textSize="16sp" />
@@ -97,6 +104,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-condensed"
                         android:text="@string/str_no_account"
                         android:textColor="@color/grey_500"
                         android:textSize="16sp" />
@@ -108,6 +116,7 @@
                         android:layout_height="56dp"
                         android:layout_marginLeft="8dp"
                         android:layout_marginStart="8dp"
+                        android:fontFamily="sans-serif-condensed"
                         android:text="@string/str_register"
                         android:textColor="@color/colorPrimary"
                         android:textSize="16sp" />
@@ -131,9 +140,10 @@
                 style="?android:attr/borderlessButtonStyle"
                 android:layout_width="wrap_content"
                 android:layout_height="56dp"
-                android:layout_marginRight="16dp"
                 android:layout_marginEnd="16dp"
+                android:layout_marginRight="16dp"
                 android:enabled="false"
+                android:fontFamily="sans-serif-condensed"
                 android:text="@string/str_sign_in"
                 android:textColor="@color/grey_500"
                 android:textSize="16sp" />
