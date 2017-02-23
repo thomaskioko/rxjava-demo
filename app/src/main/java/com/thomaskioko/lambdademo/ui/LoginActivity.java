@@ -1,5 +1,6 @@
-package com.thomaskioko.lambdademo;
+package com.thomaskioko.lambdademo.ui;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.TextInputLayout;
 import android.support.v4.content.ContextCompat;
@@ -11,7 +12,9 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 
+import com.jakewharton.rxbinding.view.RxView;
 import com.jakewharton.rxbinding.widget.RxTextView;
+import com.thomaskioko.lambdademo.R;
 
 import java.util.concurrent.TimeUnit;
 
@@ -26,68 +29,58 @@ import timber.log.Timber;
 
 import static com.thomaskioko.lambdademo.utils.StringUtils.validateEmail;
 import static com.thomaskioko.lambdademo.utils.StringUtils.validatePassword;
-import static com.thomaskioko.lambdademo.utils.StringUtils.validatePasswordMatch;
 
 
 /**
  * @author kioko
  */
 
-public class RegisterActivity extends AppCompatActivity {
+public class LoginActivity extends AppCompatActivity {
 
     @BindView(R.id.toolbar)
-    Toolbar toolbar;
-    @BindView(R.id.txt_input_full_names)
-    TextInputLayout mFullNamesInputLayout;
-    @BindView(R.id.txt_input_email)
+    Toolbar mToolbar;
+    @BindView(R.id.txt_input_layout_email)
     TextInputLayout mEmailInputLayout;
-    @BindView(R.id.txt_input_password)
+    @BindView(R.id.txt_input_layout_password)
     TextInputLayout mPasswordInputLayout;
-    @BindView(R.id.txt_input_confirm_password)
-    TextInputLayout mConfirmPasswordInputLayout;
-    @BindView(R.id.et_full_names)
-    EditText mFullNameEdiText;
     @BindView(R.id.et_password)
     EditText mPasswordEditText;
-    @BindView(R.id.et_confirm_password)
-    EditText mConfirmPasswordEditText;
     @BindView(R.id.et_email)
     EditText mEmailEditText;
-    @BindView(R.id.linear_layout_sign_in)
+    @BindView(R.id.sign_in_ll)
     LinearLayout mSignInLinearLayout;
     @BindView(R.id.btn_sign_in)
     Button mButtonSignIn;
     @BindView(R.id.btn_sign_up)
     Button mButtonSignUp;
-
     @BindInt(R.integer.debounce_length)
     int mDebounceLength;
+
 
     protected CompositeSubscription mCompositeSubscription = new CompositeSubscription();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_register);
+        setContentView(R.layout.activity_login);
 
         ButterKnife.bind(this);
 
-        setSupportActionBar(toolbar);
+        setSupportActionBar(mToolbar);
 
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
-            actionBar.setTitle(getString(R.string.title_create_account));
+            actionBar.setTitle(getString(R.string.title_sign_in));
         }
 
-        Observable<CharSequence> fullNameObservable = RxTextView.textChanges(mFullNameEdiText);
+
         Observable<CharSequence> emailObservable = RxTextView.textChanges(mEmailEditText);
         Observable<CharSequence> passwordObservable = RxTextView.textChanges(mPasswordEditText);
-        Observable<CharSequence> confirmPasswordObservable = RxTextView.textChanges(mConfirmPasswordEditText);
 
         Subscription emailSubscription = emailObservable
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext(charSequence -> hideErrorMessage(mEmailInputLayout))
-                .debounce(mDebounceLength, TimeUnit.SECONDS) //Emit next item after 400 sec.
+                .debounce(mDebounceLength, TimeUnit.SECONDS) //Emit an item after 400 sec.
                 .subscribe(charSequence -> {
                     if (!validateEmail(charSequence.toString())) {
                         showErrorMessage(mEmailInputLayout, getString(R.string.error_message_invalid_email));
@@ -100,7 +93,7 @@ public class RegisterActivity extends AppCompatActivity {
 
         Subscription passwordSubscription = passwordObservable
                 .observeOn(AndroidSchedulers.mainThread())
-                .debounce(mDebounceLength, TimeUnit.SECONDS)
+                .debounce(mDebounceLength, TimeUnit.SECONDS) //Emit an item after 400 sec.
                 .doOnNext(charSequence -> hideErrorMessage(mPasswordInputLayout))
                 .subscribe(charSequence -> {
                             if (!validatePassword(charSequence.toString())) {
@@ -113,56 +106,28 @@ public class RegisterActivity extends AppCompatActivity {
                             Timber.e(throwable.getMessage());
                         });
 
-        Subscription confirmPasswordSubscription = confirmPasswordObservable
-                .observeOn(AndroidSchedulers.mainThread())
-                .debounce(mDebounceLength, TimeUnit.SECONDS)
-                .doOnNext(charSequence -> hideErrorMessage(mConfirmPasswordInputLayout))
-                .subscribe(charSequence -> {
-                            if (!validatePassword(charSequence.toString())) {
-                                showErrorMessage(mConfirmPasswordInputLayout, getString(R.string.error_message_password_different));
-                            } else {
-                                hideErrorMessage(mConfirmPasswordInputLayout);
-                            }
-                        },
-                        throwable -> {
-                            Timber.e(throwable.getMessage());
-                        });
-
         mCompositeSubscription.add(emailSubscription);
         mCompositeSubscription.add(passwordSubscription);
-        mCompositeSubscription.add(confirmPasswordSubscription);
 
-        Subscription validatePasswordsSubscription = Observable.combineLatest(passwordObservable, confirmPasswordObservable,
-                (password, confirmPassword) -> validatePasswordMatch(password.toString(), confirmPassword.toString()))
-                .subscribe(aBoolean -> {
-                    if (!aBoolean) {
-                        showErrorMessage(mConfirmPasswordInputLayout, getString(R.string.error_message_password_different));
-                    } else {
-                        hideErrorMessage(mConfirmPasswordInputLayout);
-                    }
-                });
-
-        Subscription fieldValidationSubscription = Observable.combineLatest(
-                emailObservable, passwordObservable, confirmPasswordObservable,
-                (email, password, confirmPassword) ->
-                        validateEmail(email.toString()) &&
-                                validatePassword(password.toString()) &&
-                                validatePasswordMatch(password.toString(), confirmPassword.toString())
-
-        )
+        Subscription fieldValidationSubscription = Observable.combineLatest(emailObservable, passwordObservable,
+                (email, password) -> validateEmail(email.toString()) && validatePassword(password.toString()))
                 .subscribe(aBoolean -> {
                     if (aBoolean) {
                         enableSignIn();
                     } else {
                         disableSignIn();
                     }
+
                 }, throwable -> {
                     Timber.e(throwable.getMessage());
                 });
 
-
-        mCompositeSubscription.add(validatePasswordsSubscription);
         mCompositeSubscription.add(fieldValidationSubscription);
+
+        RxView.clicks(mButtonSignUp)
+                .subscribe(aVoid -> {
+                    startActivity(new Intent(getApplicationContext(), RegisterActivity.class));
+                });
     }
 
     @Override
@@ -203,9 +168,14 @@ public class RegisterActivity extends AppCompatActivity {
      * Helper method to enable the sign in button
      */
     private void enableSignIn() {
-        mSignInLinearLayout.setBackgroundColor(ContextCompat.getColor(this, R.color.colorAccent));
+        mSignInLinearLayout.setBackgroundColor(ContextCompat.getColor(this, R.color.colorPrimary));
         mButtonSignIn.setEnabled(true);
         mButtonSignIn.setTextColor(ContextCompat.getColor(this, android.R.color.white));
+
+        RxView.clicks(mButtonSignIn)
+                .subscribe(aVoid -> {
+                    startActivity(new Intent(getApplicationContext(), MainActivity.class));
+                });
     }
 
     /**

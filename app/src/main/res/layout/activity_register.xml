@@ -35,13 +35,14 @@
                         android:layout_height="wrap_content"
                         android:layout_marginLeft="56dp"
                         android:layout_marginRight="56dp"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="15dp"
                         android:textColorHint="@color/grey_500">
 
                         <EditText
                             android:id="@+id/et_full_names"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-condensed"
                             android:hint="@string/hint_full_names"
                             android:inputType="textPersonName"
                             android:maxLength="@integer/max_text_length"
@@ -57,12 +58,14 @@
                         android:layout_marginLeft="56dp"
                         android:layout_marginRight="56dp"
                         android:layout_marginTop="16dp"
+                        android:fontFamily="sans-serif-condensed"
                         android:textColorHint="@color/grey_500">
 
                         <EditText
                             android:id="@+id/et_email"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-condensed"
                             android:hint="@string/hint_email"
                             android:inputType="textEmailAddress"
                             android:maxLength="@integer/email_length"
@@ -79,12 +82,16 @@
                         android:layout_marginLeft="56dp"
                         android:layout_marginRight="56dp"
                         android:layout_marginTop="8dp"
-                        android:textColorHint="@color/grey_500">
+                        android:fontFamily="sans-serif-condensed"
+                        android:textColorHint="@color/grey_500"
+                        app:passwordToggleEnabled="true"
+                        app:passwordToggleTint="@color/colorAccent">
 
                         <EditText
                             android:id="@+id/et_password"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-condensed"
                             android:hint="@string/hint_password"
                             android:inputType="textPassword"
                             android:maxLength="@integer/max_text_length"
@@ -100,12 +107,16 @@
                         android:layout_marginLeft="56dp"
                         android:layout_marginRight="56dp"
                         android:layout_marginTop="8dp"
-                        android:textColorHint="@color/grey_500">
+                        android:fontFamily="sans-serif-condensed"
+                        android:textColorHint="@color/grey_500"
+                        app:passwordToggleEnabled="true"
+                        app:passwordToggleTint="@color/colorAccent">
 
                         <EditText
                             android:id="@+id/et_confirm_password"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-condensed"
                             android:hint="@string/hint_confirm_password"
                             android:inputType="textPassword"
                             android:maxLength="@integer/max_text_length"
@@ -134,13 +145,13 @@
                         android:textSize="16sp" />
 
                     <Button
-                        android:id="@+id/btn_sign_up"
+                        android:id="@+id/btn_sign_in"
                         style="?android:attr/borderlessButtonStyle"
                         android:layout_width="wrap_content"
                         android:layout_height="56dp"
                         android:layout_marginLeft="8dp"
                         android:layout_marginStart="8dp"
-                        android:text="@string/button_sign_up"
+                        android:text="@string/button_sign_in"
                         android:textColor="@color/colorPrimary"
                         android:textSize="16sp" />
 
@@ -159,15 +170,16 @@
             android:gravity="end|center_vertical">
 
             <Button
-                android:id="@+id/btn_sign_in"
+                android:id="@+id/btn_register"
                 style="?android:attr/borderlessButtonStyle"
                 android:layout_width="wrap_content"
                 android:layout_height="56dp"
                 android:layout_marginEnd="16dp"
                 android:layout_marginRight="16dp"
                 android:enabled="false"
+                android:fontFamily="sans-serif-condensed"
                 android:text="@string/button_register"
-                android:textColor="@color/grey_500"
+                android:textColor="@android:color/white"
                 android:textSize="16sp" />
 
         </LinearLayout>
