@@ -1,4 +1,4 @@
-package com.thomaskioko.lambdademo;
+package com.thomaskioko.lambdademo.ui;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -14,12 +14,16 @@ import android.widget.LinearLayout;
 
 import com.jakewharton.rxbinding.view.RxView;
 import com.jakewharton.rxbinding.widget.RxTextView;
+import com.thomaskioko.lambdademo.R;
+import com.thomaskioko.lambdademo.data.RealmManager;
+import com.thomaskioko.lambdademo.model.User;
 
 import java.util.concurrent.TimeUnit;
 
 import butterknife.BindInt;
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import io.realm.Realm;
 import rx.Observable;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
@@ -28,58 +32,89 @@ import timber.log.Timber;
 
 import static com.thomaskioko.lambdademo.utils.StringUtils.validateEmail;
 import static com.thomaskioko.lambdademo.utils.StringUtils.validatePassword;
+import static com.thomaskioko.lambdademo.utils.StringUtils.validatePasswordMatch;
 
 
 /**
  * @author kioko
  */
 
-public class LoginActivity extends AppCompatActivity {
+public class RegisterActivity extends AppCompatActivity {
 
     @BindView(R.id.toolbar)
-    Toolbar mToolbar;
-    @BindView(R.id.txt_input_layout_email)
+    Toolbar toolbar;
+    @BindView(R.id.txt_input_full_names)
+    TextInputLayout mFullNamesInputLayout;
+    @BindView(R.id.txt_input_email)
     TextInputLayout mEmailInputLayout;
-    @BindView(R.id.txt_input_layout_password)
+    @BindView(R.id.txt_input_password)
     TextInputLayout mPasswordInputLayout;
+    @BindView(R.id.txt_input_confirm_password)
+    TextInputLayout mConfirmPasswordInputLayout;
+    @BindView(R.id.et_full_names)
+    EditText mFullNameEdiText;
     @BindView(R.id.et_password)
     EditText mPasswordEditText;
+    @BindView(R.id.et_confirm_password)
+    EditText mConfirmPasswordEditText;
     @BindView(R.id.et_email)
     EditText mEmailEditText;
-    @BindView(R.id.sign_in_ll)
+    @BindView(R.id.linear_layout_sign_in)
     LinearLayout mSignInLinearLayout;
+    @BindView(R.id.btn_register)
+    Button mButtonRegister;
     @BindView(R.id.btn_sign_in)
     Button mButtonSignIn;
-    @BindView(R.id.btn_sign_up)
-    Button mButtonSignUp;
+
     @BindInt(R.integer.debounce_length)
     int mDebounceLength;
 
-
+    private Realm mRealm;
     protected CompositeSubscription mCompositeSubscription = new CompositeSubscription();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_login);
+        setContentView(R.layout.activity_register);
 
         ButterKnife.bind(this);
 
-        setSupportActionBar(mToolbar);
+        setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
+
 
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
-            actionBar.setTitle(getString(R.string.title_sign_in));
+            actionBar.setTitle(getString(R.string.title_create_account));
+            actionBar.setHomeButtonEnabled(true);
         }
 
+        mRealm = RealmManager.with(this).getRealm();
 
+        Observable<CharSequence> fullNameObservable = RxTextView.textChanges(mFullNameEdiText);
         Observable<CharSequence> emailObservable = RxTextView.textChanges(mEmailEditText);
         Observable<CharSequence> passwordObservable = RxTextView.textChanges(mPasswordEditText);
+        Observable<CharSequence> confirmPasswordObservable = RxTextView.textChanges(mConfirmPasswordEditText);
+
+        Subscription fullNamesSubscription = fullNameObservable
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnNext(charSequence -> hideErrorMessage(mFullNamesInputLayout))
+                .debounce(mDebounceLength, TimeUnit.SECONDS) //Emit next item after 400 sec.
+                .subscribe(charSequence -> {
+                    if (charSequence.toString().isEmpty()) {
+                        showErrorMessage(mEmailInputLayout, getString(R.string.error_message_invalid_names));
+                    } else {
+                        hideErrorMessage(mEmailInputLayout);
+                    }
+                }, throwable -> {
+                    Timber.e(throwable.getMessage());
+                });
 
         Subscription emailSubscription = emailObservable
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext(charSequence -> hideErrorMessage(mEmailInputLayout))
-                .debounce(mDebounceLength, TimeUnit.SECONDS) //Emit an item after 400 sec.
+                .debounce(mDebounceLength, TimeUnit.SECONDS) //Emit next item after 400 sec.
                 .subscribe(charSequence -> {
                     if (!validateEmail(charSequence.toString())) {
                         showErrorMessage(mEmailInputLayout, getString(R.string.error_message_invalid_email));
@@ -92,7 +127,7 @@ public class LoginActivity extends AppCompatActivity {
 
         Subscription passwordSubscription = passwordObservable
                 .observeOn(AndroidSchedulers.mainThread())
-                .debounce(mDebounceLength, TimeUnit.SECONDS) //Emit an item after 400 sec.
+                .debounce(mDebounceLength, TimeUnit.SECONDS)
                 .doOnNext(charSequence -> hideErrorMessage(mPasswordInputLayout))
                 .subscribe(charSequence -> {
                             if (!validatePassword(charSequence.toString())) {
@@ -105,28 +140,60 @@ public class LoginActivity extends AppCompatActivity {
                             Timber.e(throwable.getMessage());
                         });
 
+        Subscription confirmPasswordSubscription = confirmPasswordObservable
+                .observeOn(AndroidSchedulers.mainThread())
+                .debounce(mDebounceLength, TimeUnit.SECONDS)
+                .doOnNext(charSequence -> hideErrorMessage(mConfirmPasswordInputLayout))
+                .subscribe(charSequence -> {
+                            if (!validatePassword(charSequence.toString())) {
+                                showErrorMessage(mConfirmPasswordInputLayout, getString(R.string.error_message_password_different));
+                            } else {
+                                hideErrorMessage(mConfirmPasswordInputLayout);
+                            }
+                        },
+                        throwable -> {
+                            Timber.e(throwable.getMessage());
+                        });
+
+        mCompositeSubscription.add(fullNamesSubscription);
         mCompositeSubscription.add(emailSubscription);
         mCompositeSubscription.add(passwordSubscription);
+        mCompositeSubscription.add(confirmPasswordSubscription);
 
-        Subscription fieldValidationSubscription = Observable.combineLatest(emailObservable, passwordObservable,
-                (email, password) -> validateEmail(email.toString()) && validatePassword(password.toString()))
+        Subscription validatePasswordsSubscription = Observable.combineLatest(passwordObservable, confirmPasswordObservable,
+                (password, confirmPassword) -> validatePasswordMatch(password.toString(), confirmPassword.toString()))
+                .subscribe(aBoolean -> {
+                    if (!aBoolean) {
+                        showErrorMessage(mConfirmPasswordInputLayout, getString(R.string.error_message_password_different));
+                    } else {
+                        hideErrorMessage(mConfirmPasswordInputLayout);
+                    }
+                });
+
+        Subscription fieldValidationSubscription = Observable.combineLatest(
+                emailObservable, passwordObservable, confirmPasswordObservable,
+                (email, password, confirmPassword) ->
+                        validateEmail(email.toString()) &&
+                                validatePassword(password.toString()) &&
+                                validatePasswordMatch(password.toString(), confirmPassword.toString())
+
+        )
                 .subscribe(aBoolean -> {
                     if (aBoolean) {
                         enableSignIn();
                     } else {
                         disableSignIn();
                     }
-
                 }, throwable -> {
                     Timber.e(throwable.getMessage());
                 });
 
+
+        mCompositeSubscription.add(validatePasswordsSubscription);
         mCompositeSubscription.add(fieldValidationSubscription);
 
-        RxView.clicks(mButtonSignUp)
-                .subscribe(aVoid -> {
-                    startActivity(new Intent(getApplicationContext(), RegisterActivity.class));
-                });
+        RxView.clicks(mButtonSignIn)
+                .subscribe(aVoid -> startActivity(new Intent(getApplicationContext(), LoginActivity.class)));
     }
 
     @Override
@@ -168,13 +235,15 @@ public class LoginActivity extends AppCompatActivity {
      */
     private void enableSignIn() {
         mSignInLinearLayout.setBackgroundColor(ContextCompat.getColor(this, R.color.colorAccent));
-        mButtonSignIn.setEnabled(true);
-        mButtonSignIn.setTextColor(ContextCompat.getColor(this, android.R.color.white));
-
-        RxView.clicks(mButtonSignIn)
+        mButtonRegister.setEnabled(true);
+        mButtonRegister.setTextColor(ContextCompat.getColor(this, android.R.color.white));
+        
+        RxView.clicks(mButtonRegister)
                 .subscribe(aVoid -> {
                     startActivity(new Intent(getApplicationContext(), MainActivity.class));
                 });
+
+
     }
 
     /**
@@ -182,7 +251,7 @@ public class LoginActivity extends AppCompatActivity {
      */
     private void disableSignIn() {
         mSignInLinearLayout.setBackgroundColor(ContextCompat.getColor(this, R.color.grey_400));
-        mButtonSignIn.setEnabled(false);
-        mButtonSignIn.setTextColor(ContextCompat.getColor(this, R.color.grey_500));
+        mButtonRegister.setEnabled(false);
+        mButtonRegister.setTextColor(ContextCompat.getColor(this, R.color.grey_500));
     }
 }
