@@ -6,6 +6,7 @@ import com.facebook.stetho.Stetho;
 
 import io.realm.Realm;
 import io.realm.RealmConfiguration;
+import timber.log.Timber;
 
 /**
  * @author Thomas Kioko
@@ -19,6 +20,7 @@ public class ApplicationClass extends Application {
 
         if (BuildConfig.DEBUG) {
             Stetho.initializeWithDefaults(this);
+            Timber.plant(new Timber.DebugTree());
         }
 
         Realm.init(this);
