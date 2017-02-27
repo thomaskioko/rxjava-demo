@@ -7,6 +7,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -15,12 +16,14 @@ import android.widget.LinearLayout;
 import com.jakewharton.rxbinding.view.RxView;
 import com.jakewharton.rxbinding.widget.RxTextView;
 import com.thomaskioko.lambdademo.R;
+import com.thomaskioko.lambdademo.model.User;
 
 import java.util.concurrent.TimeUnit;
 
 import butterknife.BindInt;
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import io.realm.Realm;
 import rx.Observable;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
@@ -56,6 +59,11 @@ public class LoginActivity extends AppCompatActivity {
     @BindInt(R.integer.debounce_length)
     int mDebounceLength;
 
+    String userEmail = "";
+    String userPassword = "";
+
+    private Realm mRealm;
+
 
     protected CompositeSubscription mCompositeSubscription = new CompositeSubscription();
 
@@ -73,31 +81,47 @@ public class LoginActivity extends AppCompatActivity {
             actionBar.setTitle(getString(R.string.title_sign_in));
         }
 
+        mRealm = Realm.getDefaultInstance();
+
+
+        User user = mRealm.where(User.class).findAll().first();
+        if (user != null) {
+            userEmail = user.getEmail();
+            userPassword = user.getPassword();
+        }
+
 
         Observable<CharSequence> emailObservable = RxTextView.textChanges(mEmailEditText);
         Observable<CharSequence> passwordObservable = RxTextView.textChanges(mPasswordEditText);
 
         Subscription emailSubscription = emailObservable
-                .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext(charSequence -> hideErrorMessage(mEmailInputLayout))
-                .debounce(mDebounceLength, TimeUnit.SECONDS) //Emit an item after 400 sec.
+                .debounce(mDebounceLength, TimeUnit.MILLISECONDS)
+                .filter(charSequence -> !TextUtils.isEmpty(charSequence))
+                .observeOn(AndroidSchedulers.mainThread()) // UI Thread
                 .subscribe(charSequence -> {
-                    if (!validateEmail(charSequence.toString())) {
-                        showErrorMessage(mEmailInputLayout, getString(R.string.error_message_invalid_email));
-                    } else {
-                        hideErrorMessage(mEmailInputLayout);
-                    }
-                }, throwable -> {
-                    Timber.e(throwable.getMessage());
-                });
+                            boolean isEmailValid = validateEmail(charSequence.toString()) &&
+                                    charSequence.toString().equals(userEmail);
+                            if (!isEmailValid) {
+                                showErrorMessage(mEmailInputLayout, getString(R.string.error_message_nonexistent_email));
+                            } else {
+                                hideErrorMessage(mEmailInputLayout);
+                            }
+                        },
+                        throwable -> {
+                            Timber.e(throwable.getMessage());
+                        });
 
         Subscription passwordSubscription = passwordObservable
-                .observeOn(AndroidSchedulers.mainThread())
-                .debounce(mDebounceLength, TimeUnit.SECONDS) //Emit an item after 400 sec.
                 .doOnNext(charSequence -> hideErrorMessage(mPasswordInputLayout))
+                .debounce(mDebounceLength, TimeUnit.MILLISECONDS)
+                .filter(charSequence -> !TextUtils.isEmpty(charSequence))
+                .observeOn(AndroidSchedulers.mainThread()) // UI Thread
                 .subscribe(charSequence -> {
-                            if (!validatePassword(charSequence.toString())) {
-                                showErrorMessage(mPasswordInputLayout, getString(R.string.error_message_invalid_password));
+                            boolean isPasswordValid = validatePassword(charSequence.toString())&&
+                                    charSequence.toString().equals(userPassword);
+                            if (!isPasswordValid) {
+                                showErrorMessage(mPasswordInputLayout, getString(R.string.error_message_nonexistent_password));
                             } else {
                                 hideErrorMessage(mPasswordInputLayout);
                             }
@@ -110,7 +134,12 @@ public class LoginActivity extends AppCompatActivity {
         mCompositeSubscription.add(passwordSubscription);
 
         Subscription fieldValidationSubscription = Observable.combineLatest(emailObservable, passwordObservable,
-                (email, password) -> validateEmail(email.toString()) && validatePassword(password.toString()))
+                (email, password) -> {
+                    boolean isEmailValid = validateEmail(email.toString());
+                    boolean isPasswordValid = validatePassword(password.toString());
+
+                    return isEmailValid && isPasswordValid;
+                })
                 .subscribe(aBoolean -> {
                     if (aBoolean) {
                         enableSignIn();

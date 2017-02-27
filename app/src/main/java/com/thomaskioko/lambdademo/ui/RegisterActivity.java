@@ -7,6 +7,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -15,7 +16,6 @@ import android.widget.LinearLayout;
 import com.jakewharton.rxbinding.view.RxView;
 import com.jakewharton.rxbinding.widget.RxTextView;
 import com.thomaskioko.lambdademo.R;
-import com.thomaskioko.lambdademo.data.RealmManager;
 import com.thomaskioko.lambdademo.model.User;
 
 import java.util.concurrent.TimeUnit;
@@ -90,7 +90,7 @@ public class RegisterActivity extends AppCompatActivity {
             actionBar.setHomeButtonEnabled(true);
         }
 
-        mRealm = RealmManager.with(this).getRealm();
+        mRealm = Realm.getDefaultInstance();
 
         Observable<CharSequence> fullNameObservable = RxTextView.textChanges(mFullNameEdiText);
         Observable<CharSequence> emailObservable = RxTextView.textChanges(mEmailEditText);
@@ -98,9 +98,10 @@ public class RegisterActivity extends AppCompatActivity {
         Observable<CharSequence> confirmPasswordObservable = RxTextView.textChanges(mConfirmPasswordEditText);
 
         Subscription fullNamesSubscription = fullNameObservable
-                .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext(charSequence -> hideErrorMessage(mFullNamesInputLayout))
                 .debounce(mDebounceLength, TimeUnit.SECONDS) //Emit next item after 400 sec.
+                .filter(charSequence -> !TextUtils.isEmpty(charSequence))
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(charSequence -> {
                     if (charSequence.toString().isEmpty()) {
                         showErrorMessage(mEmailInputLayout, getString(R.string.error_message_invalid_names));
@@ -112,25 +113,30 @@ public class RegisterActivity extends AppCompatActivity {
                 });
 
         Subscription emailSubscription = emailObservable
-                .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext(charSequence -> hideErrorMessage(mEmailInputLayout))
-                .debounce(mDebounceLength, TimeUnit.SECONDS) //Emit next item after 400 sec.
+                .debounce(mDebounceLength, TimeUnit.MILLISECONDS)
+                .filter(charSequence -> !TextUtils.isEmpty(charSequence))
+                .observeOn(AndroidSchedulers.mainThread()) // UI Thread
                 .subscribe(charSequence -> {
-                    if (!validateEmail(charSequence.toString())) {
-                        showErrorMessage(mEmailInputLayout, getString(R.string.error_message_invalid_email));
-                    } else {
-                        hideErrorMessage(mEmailInputLayout);
-                    }
-                }, throwable -> {
-                    Timber.e(throwable.getMessage());
-                });
+                            boolean isEmailValid = validateEmail(charSequence.toString());
+                            if (!isEmailValid) {
+                                showErrorMessage(mEmailInputLayout, getString(R.string.error_message_invalid_email));
+                            } else {
+                                hideErrorMessage(mEmailInputLayout);
+                            }
+                        },
+                        throwable -> {
+                            Timber.e(throwable.getMessage());
+                        });
 
         Subscription passwordSubscription = passwordObservable
-                .observeOn(AndroidSchedulers.mainThread())
-                .debounce(mDebounceLength, TimeUnit.SECONDS)
                 .doOnNext(charSequence -> hideErrorMessage(mPasswordInputLayout))
+                .debounce(mDebounceLength, TimeUnit.MILLISECONDS)
+                .filter(charSequence -> !TextUtils.isEmpty(charSequence))
+                .observeOn(AndroidSchedulers.mainThread()) // UI Thread
                 .subscribe(charSequence -> {
-                            if (!validatePassword(charSequence.toString())) {
+                            boolean isPasswordValid = validatePassword(charSequence.toString());
+                            if (!isPasswordValid) {
                                 showErrorMessage(mPasswordInputLayout, getString(R.string.error_message_invalid_password));
                             } else {
                                 hideErrorMessage(mPasswordInputLayout);
@@ -145,7 +151,8 @@ public class RegisterActivity extends AppCompatActivity {
                 .debounce(mDebounceLength, TimeUnit.SECONDS)
                 .doOnNext(charSequence -> hideErrorMessage(mConfirmPasswordInputLayout))
                 .subscribe(charSequence -> {
-                            if (!validatePassword(charSequence.toString())) {
+                            boolean isPasswordValid = validatePassword(charSequence.toString());
+                            if (!isPasswordValid) {
                                 showErrorMessage(mConfirmPasswordInputLayout, getString(R.string.error_message_password_different));
                             } else {
                                 hideErrorMessage(mConfirmPasswordInputLayout);
@@ -171,9 +178,10 @@ public class RegisterActivity extends AppCompatActivity {
                 });
 
         Subscription fieldValidationSubscription = Observable.combineLatest(
-                emailObservable, passwordObservable, confirmPasswordObservable,
-                (email, password, confirmPassword) ->
-                        validateEmail(email.toString()) &&
+                fullNameObservable, emailObservable, passwordObservable, confirmPasswordObservable,
+                (fullNames, email, password, confirmPassword) ->
+                        (!fullNames.toString().equals("")) &&
+                                validateEmail(email.toString()) &&
                                 validatePassword(password.toString()) &&
                                 validatePasswordMatch(password.toString(), confirmPassword.toString())
 
@@ -237,11 +245,20 @@ public class RegisterActivity extends AppCompatActivity {
         mSignInLinearLayout.setBackgroundColor(ContextCompat.getColor(this, R.color.colorAccent));
         mButtonRegister.setEnabled(true);
         mButtonRegister.setTextColor(ContextCompat.getColor(this, android.R.color.white));
-        
-        RxView.clicks(mButtonRegister)
-                .subscribe(aVoid -> {
-                    startActivity(new Intent(getApplicationContext(), MainActivity.class));
-                });
+
+        mRealm.executeTransactionAsync(realm -> {
+            User user = realm.createObject(User.class,  mEmailEditText.getText().toString());
+            user.setFullNames(mFullNameEdiText.getText().toString());
+            user.setPassword(mPasswordEditText.getText().toString());
+        }, () -> {
+            RxView.clicks(mButtonRegister)
+                    .subscribe(aVoid -> {
+                        startActivity(new Intent(getApplicationContext(), LoginActivity.class));
+                    });
+
+        }, error -> {
+            Timber.e(error.getMessage());
+        });
 
 
     }
