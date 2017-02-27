@@ -189,7 +189,7 @@ public class LoginActivity extends AppCompatActivity {
      * Helper method to enable the sign in button
      */
     private void enableSignIn() {
-        mSignInLinearLayout.setBackgroundColor(ContextCompat.getColor(this, R.color.colorPrimary));
+        mSignInLinearLayout.setBackgroundColor(ContextCompat.getColor(this, R.color.colorAccent));
         mButtonSignIn.setEnabled(true);
         mButtonSignIn.setTextColor(ContextCompat.getColor(this, android.R.color.white));
 
