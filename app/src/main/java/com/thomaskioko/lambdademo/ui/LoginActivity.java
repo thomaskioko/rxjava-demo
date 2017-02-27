@@ -59,9 +59,6 @@ public class LoginActivity extends AppCompatActivity {
     @BindInt(R.integer.debounce_length)
     int mDebounceLength;
 
-    String userEmail = "";
-    String userPassword = "";
-
     private Realm mRealm;
 
 
@@ -84,53 +81,48 @@ public class LoginActivity extends AppCompatActivity {
         mRealm = Realm.getDefaultInstance();
 
 
-        User user = mRealm.where(User.class).findAll().first();
-        if (user != null) {
-            userEmail = user.getEmail();
-            userPassword = user.getPassword();
-        }
-
-
-        Observable<CharSequence> emailObservable = RxTextView.textChanges(mEmailEditText);
-        Observable<CharSequence> passwordObservable = RxTextView.textChanges(mPasswordEditText);
-
-        Subscription emailSubscription = emailObservable
-                .doOnNext(charSequence -> hideErrorMessage(mEmailInputLayout))
+        Observable<User> userObservable = mRealm.asObservable()
+                .map(realm -> realm.where(User.class).findAll().first())
+                .filter(user -> user != null)
                 .debounce(mDebounceLength, TimeUnit.MILLISECONDS)
-                .filter(charSequence -> !TextUtils.isEmpty(charSequence))
-                .observeOn(AndroidSchedulers.mainThread()) // UI Thread
-                .subscribe(charSequence -> {
-                            boolean isEmailValid = validateEmail(charSequence.toString()) &&
-                                    charSequence.toString().equals(userEmail);
-                            if (!isEmailValid) {
-                                showErrorMessage(mEmailInputLayout, getString(R.string.error_message_nonexistent_email));
-                            } else {
-                                hideErrorMessage(mEmailInputLayout);
-                            }
-                        },
-                        throwable -> {
-                            Timber.e(throwable.getMessage());
-                        });
+                .observeOn(AndroidSchedulers.mainThread()); // UI Thread;
 
-        Subscription passwordSubscription = passwordObservable
-                .doOnNext(charSequence -> hideErrorMessage(mPasswordInputLayout))
-                .debounce(mDebounceLength, TimeUnit.MILLISECONDS)
-                .filter(charSequence -> !TextUtils.isEmpty(charSequence))
-                .observeOn(AndroidSchedulers.mainThread()) // UI Thread
-                .subscribe(charSequence -> {
-                            boolean isPasswordValid = validatePassword(charSequence.toString())&&
-                                    charSequence.toString().equals(userPassword);
-                            if (!isPasswordValid) {
-                                showErrorMessage(mPasswordInputLayout, getString(R.string.error_message_nonexistent_password));
-                            } else {
-                                hideErrorMessage(mPasswordInputLayout);
-                            }
-                        },
-                        throwable -> {
-                            Timber.e(throwable.getMessage());
-                        });
 
-        mCompositeSubscription.add(emailSubscription);
+        Observable<CharSequence> emailObservable = RxTextView.textChanges(mEmailEditText)
+                .filter(charSequence -> !TextUtils.isEmpty(charSequence));
+        Observable<CharSequence> passwordObservable = RxTextView.textChanges(mPasswordEditText)
+                .filter(charSequence -> !TextUtils.isEmpty(charSequence));
+
+        Subscription userEmailSubscription = Observable.combineLatest(userObservable, emailObservable,
+                (user, userEmail) -> validateEmail(userEmail.toString()) && userEmail.toString().equals(user.getEmail()))
+                .subscribe(aBoolean -> {
+
+                    if (!aBoolean) {
+                        showErrorMessage(mEmailInputLayout, getString(R.string.error_message_nonexistent_email));
+                    } else {
+                        hideErrorMessage(mEmailInputLayout);
+                    }
+                }, throwable -> {
+                    Timber.e(throwable.getMessage());
+                });
+
+
+        Subscription passwordSubscription = Observable.combineLatest(userObservable, passwordObservable,
+                (user, userPassword) -> validatePassword(userPassword.toString()) && userPassword.toString().equals(user.getPassword()))
+                .subscribe(aBoolean -> {
+
+                    if (!aBoolean) {
+                        showErrorMessage(mPasswordInputLayout, getString(R.string.error_message_nonexistent_password));
+                    } else {
+                        hideErrorMessage(mPasswordInputLayout);
+                    }
+                }, throwable -> {
+                    Timber.e(throwable.getMessage());
+                });
+
+
+
+        mCompositeSubscription.add(userEmailSubscription);
         mCompositeSubscription.add(passwordSubscription);
 
         Subscription fieldValidationSubscription = Observable.combineLatest(emailObservable, passwordObservable,
@@ -197,7 +189,7 @@ public class LoginActivity extends AppCompatActivity {
      * Helper method to enable the sign in button
      */
     private void enableSignIn() {
-        mSignInLinearLayout.setBackgroundColor(ContextCompat.getColor(this, R.color.colorPrimary));
+        mSignInLinearLayout.setBackgroundColor(ContextCompat.getColor(this, R.color.colorAccent));
         mButtonSignIn.setEnabled(true);
         mButtonSignIn.setTextColor(ContextCompat.getColor(this, android.R.color.white));
 
