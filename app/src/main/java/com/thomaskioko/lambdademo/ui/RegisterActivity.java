@@ -1,23 +1,29 @@
-package com.thomaskioko.lambdademo;
+package com.thomaskioko.lambdademo.ui;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.TextInputLayout;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 
+import com.jakewharton.rxbinding.view.RxView;
 import com.jakewharton.rxbinding.widget.RxTextView;
+import com.thomaskioko.lambdademo.R;
+import com.thomaskioko.lambdademo.model.User;
 
 import java.util.concurrent.TimeUnit;
 
 import butterknife.BindInt;
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import io.realm.Realm;
 import rx.Observable;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
@@ -55,14 +61,15 @@ public class RegisterActivity extends AppCompatActivity {
     EditText mEmailEditText;
     @BindView(R.id.linear_layout_sign_in)
     LinearLayout mSignInLinearLayout;
+    @BindView(R.id.btn_register)
+    Button mButtonRegister;
     @BindView(R.id.btn_sign_in)
     Button mButtonSignIn;
-    @BindView(R.id.btn_sign_up)
-    Button mButtonSignUp;
 
     @BindInt(R.integer.debounce_length)
     int mDebounceLength;
 
+    private Realm mRealm;
     protected CompositeSubscription mCompositeSubscription = new CompositeSubscription();
 
     @Override
@@ -73,24 +80,31 @@ public class RegisterActivity extends AppCompatActivity {
         ButterKnife.bind(this);
 
         setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
+
 
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
             actionBar.setTitle(getString(R.string.title_create_account));
+            actionBar.setHomeButtonEnabled(true);
         }
+
+        mRealm = Realm.getDefaultInstance();
 
         Observable<CharSequence> fullNameObservable = RxTextView.textChanges(mFullNameEdiText);
         Observable<CharSequence> emailObservable = RxTextView.textChanges(mEmailEditText);
         Observable<CharSequence> passwordObservable = RxTextView.textChanges(mPasswordEditText);
         Observable<CharSequence> confirmPasswordObservable = RxTextView.textChanges(mConfirmPasswordEditText);
 
-        Subscription emailSubscription = emailObservable
-                .observeOn(AndroidSchedulers.mainThread())
-                .doOnNext(charSequence -> hideErrorMessage(mEmailInputLayout))
+        Subscription fullNamesSubscription = fullNameObservable
+                .doOnNext(charSequence -> hideErrorMessage(mFullNamesInputLayout))
                 .debounce(mDebounceLength, TimeUnit.SECONDS) //Emit next item after 400 sec.
+                .filter(charSequence -> !TextUtils.isEmpty(charSequence))
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(charSequence -> {
-                    if (!validateEmail(charSequence.toString())) {
-                        showErrorMessage(mEmailInputLayout, getString(R.string.error_message_invalid_email));
+                    if (charSequence.toString().isEmpty()) {
+                        showErrorMessage(mEmailInputLayout, getString(R.string.error_message_invalid_names));
                     } else {
                         hideErrorMessage(mEmailInputLayout);
                     }
@@ -98,12 +112,31 @@ public class RegisterActivity extends AppCompatActivity {
                     Timber.e(throwable.getMessage());
                 });
 
-        Subscription passwordSubscription = passwordObservable
-                .observeOn(AndroidSchedulers.mainThread())
-                .debounce(mDebounceLength, TimeUnit.SECONDS)
-                .doOnNext(charSequence -> hideErrorMessage(mPasswordInputLayout))
+        Subscription emailSubscription = emailObservable
+                .doOnNext(charSequence -> hideErrorMessage(mEmailInputLayout))
+                .debounce(mDebounceLength, TimeUnit.MILLISECONDS)
+                .filter(charSequence -> !TextUtils.isEmpty(charSequence))
+                .observeOn(AndroidSchedulers.mainThread()) // UI Thread
                 .subscribe(charSequence -> {
-                            if (!validatePassword(charSequence.toString())) {
+                            boolean isEmailValid = validateEmail(charSequence.toString());
+                            if (!isEmailValid) {
+                                showErrorMessage(mEmailInputLayout, getString(R.string.error_message_invalid_email));
+                            } else {
+                                hideErrorMessage(mEmailInputLayout);
+                            }
+                        },
+                        throwable -> {
+                            Timber.e(throwable.getMessage());
+                        });
+
+        Subscription passwordSubscription = passwordObservable
+                .doOnNext(charSequence -> hideErrorMessage(mPasswordInputLayout))
+                .debounce(mDebounceLength, TimeUnit.MILLISECONDS)
+                .filter(charSequence -> !TextUtils.isEmpty(charSequence))
+                .observeOn(AndroidSchedulers.mainThread()) // UI Thread
+                .subscribe(charSequence -> {
+                            boolean isPasswordValid = validatePassword(charSequence.toString());
+                            if (!isPasswordValid) {
                                 showErrorMessage(mPasswordInputLayout, getString(R.string.error_message_invalid_password));
                             } else {
                                 hideErrorMessage(mPasswordInputLayout);
@@ -118,7 +151,8 @@ public class RegisterActivity extends AppCompatActivity {
                 .debounce(mDebounceLength, TimeUnit.SECONDS)
                 .doOnNext(charSequence -> hideErrorMessage(mConfirmPasswordInputLayout))
                 .subscribe(charSequence -> {
-                            if (!validatePassword(charSequence.toString())) {
+                            boolean isPasswordValid = validatePassword(charSequence.toString());
+                            if (!isPasswordValid) {
                                 showErrorMessage(mConfirmPasswordInputLayout, getString(R.string.error_message_password_different));
                             } else {
                                 hideErrorMessage(mConfirmPasswordInputLayout);
@@ -128,6 +162,7 @@ public class RegisterActivity extends AppCompatActivity {
                             Timber.e(throwable.getMessage());
                         });
 
+        mCompositeSubscription.add(fullNamesSubscription);
         mCompositeSubscription.add(emailSubscription);
         mCompositeSubscription.add(passwordSubscription);
         mCompositeSubscription.add(confirmPasswordSubscription);
@@ -143,9 +178,10 @@ public class RegisterActivity extends AppCompatActivity {
                 });
 
         Subscription fieldValidationSubscription = Observable.combineLatest(
-                emailObservable, passwordObservable, confirmPasswordObservable,
-                (email, password, confirmPassword) ->
-                        validateEmail(email.toString()) &&
+                fullNameObservable, emailObservable, passwordObservable, confirmPasswordObservable,
+                (fullNames, email, password, confirmPassword) ->
+                        (!fullNames.toString().equals("")) &&
+                                validateEmail(email.toString()) &&
                                 validatePassword(password.toString()) &&
                                 validatePasswordMatch(password.toString(), confirmPassword.toString())
 
@@ -163,6 +199,9 @@ public class RegisterActivity extends AppCompatActivity {
 
         mCompositeSubscription.add(validatePasswordsSubscription);
         mCompositeSubscription.add(fieldValidationSubscription);
+
+        RxView.clicks(mButtonSignIn)
+                .subscribe(aVoid -> startActivity(new Intent(getApplicationContext(), LoginActivity.class)));
     }
 
     @Override
@@ -204,8 +243,24 @@ public class RegisterActivity extends AppCompatActivity {
      */
     private void enableSignIn() {
         mSignInLinearLayout.setBackgroundColor(ContextCompat.getColor(this, R.color.colorAccent));
-        mButtonSignIn.setEnabled(true);
-        mButtonSignIn.setTextColor(ContextCompat.getColor(this, android.R.color.white));
+        mButtonRegister.setEnabled(true);
+        mButtonRegister.setTextColor(ContextCompat.getColor(this, android.R.color.white));
+
+        mRealm.executeTransactionAsync(realm -> {
+            User user = realm.createObject(User.class,  mEmailEditText.getText().toString());
+            user.setFullNames(mFullNameEdiText.getText().toString());
+            user.setPassword(mPasswordEditText.getText().toString());
+        }, () -> {
+            RxView.clicks(mButtonRegister)
+                    .subscribe(aVoid -> {
+                        startActivity(new Intent(getApplicationContext(), LoginActivity.class));
+                    });
+
+        }, error -> {
+            Timber.e(error.getMessage());
+        });
+
+
     }
 
     /**
@@ -213,7 +268,7 @@ public class RegisterActivity extends AppCompatActivity {
      */
     private void disableSignIn() {
         mSignInLinearLayout.setBackgroundColor(ContextCompat.getColor(this, R.color.grey_400));
-        mButtonSignIn.setEnabled(false);
-        mButtonSignIn.setTextColor(ContextCompat.getColor(this, R.color.grey_500));
+        mButtonRegister.setEnabled(false);
+        mButtonRegister.setTextColor(ContextCompat.getColor(this, R.color.grey_500));
     }
 }

@@ -1,4 +1,6 @@
 apply plugin: 'com.android.application'
+apply plugin: 'realm-android'
+apply plugin: 'me.tatarka.retrolambda'
 
 android {
     compileSdkVersion 25
@@ -11,7 +13,6 @@ android {
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
-        jackOptions.enabled true
     }
     buildTypes {
         release {
@@ -24,6 +25,13 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+}
+
+retrolambda {
+    javaVersion JavaVersion.VERSION_1_6
+    jvmArgs '-noverify'
+    defaultMethods false
+    incremental true
 }
 
 dependencies {
@@ -42,6 +50,8 @@ dependencies {
     compile 'com.jakewharton.rxbinding:rxbinding:0.4.0' // RxBinding
 
     compile 'com.jakewharton.timber:timber:4.5.1'
+
+    compile 'com.facebook.stetho:stetho:1.4.2'
 
     testCompile 'junit:junit:4.12'
 }

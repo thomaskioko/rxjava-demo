@@ -1,4 +1,4 @@
-package com.thomaskioko.lambdademo;
+package com.thomaskioko.lambdademo.ui;
 
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
@@ -11,6 +11,7 @@ import android.view.View;
 import android.widget.Button;
 
 import com.jakewharton.rxbinding.view.RxView;
+import com.thomaskioko.lambdademo.R;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;

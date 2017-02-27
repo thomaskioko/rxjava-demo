@@ -3,4 +3,12 @@
     <dimen name="activity_horizontal_margin">16dp</dimen>
     <dimen name="activity_vertical_margin">16dp</dimen>
     <dimen name="fab_margin">16dp</dimen>
+
+
+    <!-- Margin Dimensions -->
+    <dimen name="dimen_margin_micro">5dp</dimen>
+    <dimen name="dimen_margin_mini">10dp</dimen>
+    <dimen name="dimen_margin_small">15dp</dimen>
+    <dimen name="dimen_margin_medium">20dp</dimen>
+    <dimen name="dimen_margin_large">25dp</dimen>
 </resources>
