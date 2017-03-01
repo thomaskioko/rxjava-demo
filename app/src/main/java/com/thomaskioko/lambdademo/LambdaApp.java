@@ -5,6 +5,7 @@ import android.content.res.Resources;
 
 import com.facebook.stetho.Stetho;
 import com.thomaskioko.lambdademo.di.compoments.AppComponent;
+import com.thomaskioko.lambdademo.di.compoments.DaggerAppComponent;
 import com.thomaskioko.lambdademo.di.modules.AppModule;
 
 import io.realm.Realm;
@@ -31,7 +32,7 @@ public class LambdaApp extends Application {
         Realm.init(this);
 
         sLambdaApp = this;
-        sLambdaApp = DaggerAppComponent.builder()
+        sAppComponent = DaggerAppComponent.builder()
                 .appModule(new AppModule(this))
                 .build();
     }
