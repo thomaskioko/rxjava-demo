@@ -19,7 +19,7 @@ import io.realm.Realm;
 public abstract class BaseActivity extends AppCompatActivity {
 
     @Inject
-    Realm realm;
+    Realm mRealm;
 
     private ActivityComponent mActivityComponent;
 
@@ -33,13 +33,18 @@ public abstract class BaseActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
 
-        if (realm != null) {
-            realm.close();
+        if (mRealm != null) {
+            mRealm.close();
         }
     }
 
     public abstract int getLayout();
 
+    /**
+     * Helper method that instantiates {@link ActivityComponent}
+     *
+     * @return {@link ActivityComponent} Instance
+     */
     protected final ActivityComponent getActivityComponent() {
 
         if (mActivityComponent == null) {
