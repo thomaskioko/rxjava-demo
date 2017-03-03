@@ -1,7 +1,6 @@
 package com.thomaskioko.lambdademo.model;
 
 import io.realm.RealmObject;
-import io.realm.annotations.PrimaryKey;
 
 /**
  * @author Thomas Kioko
@@ -11,7 +10,6 @@ public class User extends RealmObject {
 
 
     private String fullNames;
-    @PrimaryKey
     private String email;
     private String password;
 

@@ -3,7 +3,6 @@ package com.thomaskioko.lambdademo.ui;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -13,24 +12,25 @@ import android.widget.Button;
 import com.jakewharton.rxbinding.view.RxView;
 import com.thomaskioko.lambdademo.R;
 
-import butterknife.BindView;
+import butterknife.Bind;
 import butterknife.ButterKnife;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends BaseActivity {
 
-    @BindView(R.id.fab)
+    @Bind(R.id.fab)
     FloatingActionButton mFloatingActionButton;
-    @BindView(R.id.btnClick)
+    @Bind(R.id.btnClick)
     Button mButtonClick;
-    @BindView(R.id.toolbar)
+    @Bind(R.id.toolbar)
     Toolbar mToolBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
         setSupportActionBar(mToolBar);
+
+        getActivityComponent().inject(this);
 
         RxView.clicks(mFloatingActionButton)
                 .subscribe(aVoid -> {
@@ -40,6 +40,11 @@ public class MainActivity extends AppCompatActivity {
 
         RxView.clicks(mButtonClick)
                 .subscribe(aVoid -> showSnackBar(mButtonClick));
+    }
+
+    @Override
+    public int getLayout() {
+        return R.layout.activity_main;
     }
 
     @Override

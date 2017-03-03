@@ -5,7 +5,6 @@ import android.os.Bundle;
 import android.support.design.widget.TextInputLayout;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.ActionBar;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.view.View;
@@ -21,9 +20,8 @@ import com.thomaskioko.lambdademo.model.User;
 import java.util.concurrent.TimeUnit;
 
 import butterknife.BindInt;
-import butterknife.BindView;
+import butterknife.Bind;
 import butterknife.ButterKnife;
-import io.realm.Realm;
 import rx.Observable;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
@@ -39,43 +37,43 @@ import static com.thomaskioko.lambdademo.utils.StringUtils.validatePasswordMatch
  * @author kioko
  */
 
-public class RegisterActivity extends AppCompatActivity {
+public class RegisterActivity extends BaseActivity {
 
-    @BindView(R.id.toolbar)
+    @Bind(R.id.toolbar)
     Toolbar toolbar;
-    @BindView(R.id.txt_input_full_names)
+    @Bind(R.id.txt_input_full_names)
     TextInputLayout mFullNamesInputLayout;
-    @BindView(R.id.txt_input_email)
+    @Bind(R.id.txt_input_email)
     TextInputLayout mEmailInputLayout;
-    @BindView(R.id.txt_input_password)
+    @Bind(R.id.txt_input_password)
     TextInputLayout mPasswordInputLayout;
-    @BindView(R.id.txt_input_confirm_password)
+    @Bind(R.id.txt_input_confirm_password)
     TextInputLayout mConfirmPasswordInputLayout;
-    @BindView(R.id.et_full_names)
+    @Bind(R.id.et_full_names)
     EditText mFullNameEdiText;
-    @BindView(R.id.et_password)
+    @Bind(R.id.et_password)
     EditText mPasswordEditText;
-    @BindView(R.id.et_confirm_password)
+    @Bind(R.id.et_confirm_password)
     EditText mConfirmPasswordEditText;
-    @BindView(R.id.et_email)
+    @Bind(R.id.et_email)
     EditText mEmailEditText;
-    @BindView(R.id.linear_layout_sign_in)
+    @Bind(R.id.linear_layout_sign_in)
     LinearLayout mSignInLinearLayout;
-    @BindView(R.id.btn_register)
+    @Bind(R.id.btn_register)
     Button mButtonRegister;
-    @BindView(R.id.btn_sign_in)
+    @Bind(R.id.btn_sign_in)
     Button mButtonSignIn;
 
     @BindInt(R.integer.debounce_length)
     int mDebounceLength;
 
-    private Realm mRealm;
     protected CompositeSubscription mCompositeSubscription = new CompositeSubscription();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_register);
+
+        getActivityComponent().inject(this);
 
         ButterKnife.bind(this);
 
@@ -90,7 +88,6 @@ public class RegisterActivity extends AppCompatActivity {
             actionBar.setHomeButtonEnabled(true);
         }
 
-        mRealm = Realm.getDefaultInstance();
 
         Observable<CharSequence> fullNameObservable = RxTextView.textChanges(mFullNameEdiText);
         Observable<CharSequence> emailObservable = RxTextView.textChanges(mEmailEditText);
@@ -212,6 +209,11 @@ public class RegisterActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    public int getLayout() {
+        return R.layout.activity_register;
+    }
+
     /**
      * Helper method that displays error message.
      *
@@ -246,19 +248,19 @@ public class RegisterActivity extends AppCompatActivity {
         mButtonRegister.setEnabled(true);
         mButtonRegister.setTextColor(ContextCompat.getColor(this, android.R.color.white));
 
-        mRealm.executeTransactionAsync(realm -> {
-            User user = realm.createObject(User.class,  mEmailEditText.getText().toString());
-            user.setFullNames(mFullNameEdiText.getText().toString());
-            user.setPassword(mPasswordEditText.getText().toString());
-        }, () -> {
-            RxView.clicks(mButtonRegister)
-                    .subscribe(aVoid -> {
-                        startActivity(new Intent(getApplicationContext(), LoginActivity.class));
-                    });
+        mRealm.beginTransaction();
 
-        }, error -> {
-            Timber.e(error.getMessage());
-        });
+        User user = mRealm.createObject(User.class);
+        user.setFullNames(mFullNameEdiText.getText().toString());
+        user.setEmail(mEmailEditText.getText().toString());
+        user.setPassword(mPasswordEditText.getText().toString());
+
+        mRealm.commitTransaction();
+
+        RxView.clicks(mButtonRegister)
+                .subscribe(aVoid -> {
+                    startActivity(new Intent(getApplicationContext(), LoginActivity.class));
+                });
 
 
     }
