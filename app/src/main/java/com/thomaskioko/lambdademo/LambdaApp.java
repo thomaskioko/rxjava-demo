@@ -37,18 +37,23 @@ public class LambdaApp extends Application {
                 .build();
     }
 
+    /**
+     * @return LambdaApp instance.
+     */
     public static LambdaApp getInstance() {
         return sLambdaApp;
     }
 
+    /**
+     * @return AppComponent instance.
+     */
     public static AppComponent getAppComponent() {
         return sAppComponent;
     }
 
-    public static Realm getRealm() {
-        return sAppComponent.realm();
-    }
-
+    /**
+     * @return Resources instance.
+     */
     public static Resources getRes() {
         return sLambdaApp.getResources();
     }
