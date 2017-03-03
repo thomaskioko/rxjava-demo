@@ -5,7 +5,6 @@ import android.os.Bundle;
 import android.support.design.widget.TextInputLayout;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.ActionBar;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.view.View;
@@ -21,9 +20,8 @@ import com.thomaskioko.lambdademo.model.User;
 import java.util.concurrent.TimeUnit;
 
 import butterknife.BindInt;
-import butterknife.BindView;
+import butterknife.Bind;
 import butterknife.ButterKnife;
-import io.realm.Realm;
 import rx.Observable;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
@@ -38,38 +36,35 @@ import static com.thomaskioko.lambdademo.utils.StringUtils.validatePassword;
  * @author kioko
  */
 
-public class LoginActivity extends AppCompatActivity {
+public class LoginActivity extends BaseActivity {
 
-    @BindView(R.id.toolbar)
+    @Bind(R.id.toolbar)
     Toolbar mToolbar;
-    @BindView(R.id.txt_input_layout_email)
+    @Bind(R.id.txt_input_layout_email)
     TextInputLayout mEmailInputLayout;
-    @BindView(R.id.txt_input_layout_password)
+    @Bind(R.id.txt_input_layout_password)
     TextInputLayout mPasswordInputLayout;
-    @BindView(R.id.et_password)
+    @Bind(R.id.et_password)
     EditText mPasswordEditText;
-    @BindView(R.id.et_email)
+    @Bind(R.id.et_email)
     EditText mEmailEditText;
-    @BindView(R.id.sign_in_ll)
+    @Bind(R.id.sign_in_ll)
     LinearLayout mSignInLinearLayout;
-    @BindView(R.id.btn_sign_in)
+    @Bind(R.id.btn_sign_in)
     Button mButtonSignIn;
-    @BindView(R.id.btn_sign_up)
+    @Bind(R.id.btn_sign_up)
     Button mButtonSignUp;
     @BindInt(R.integer.debounce_length)
     int mDebounceLength;
-
-    private Realm mRealm;
-
 
     protected CompositeSubscription mCompositeSubscription = new CompositeSubscription();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_login);
 
         ButterKnife.bind(this);
+        getActivityComponent().inject(this);
 
         setSupportActionBar(mToolbar);
 
@@ -77,8 +72,6 @@ public class LoginActivity extends AppCompatActivity {
         if (actionBar != null) {
             actionBar.setTitle(getString(R.string.title_sign_in));
         }
-
-        mRealm = Realm.getDefaultInstance();
 
 
         Observable<User> userObservable = mRealm.asObservable()
@@ -125,10 +118,10 @@ public class LoginActivity extends AppCompatActivity {
         mCompositeSubscription.add(userEmailSubscription);
         mCompositeSubscription.add(passwordSubscription);
 
-        Subscription fieldValidationSubscription = Observable.combineLatest(emailObservable, passwordObservable,
-                (email, password) -> {
-                    boolean isEmailValid = validateEmail(email.toString());
-                    boolean isPasswordValid = validatePassword(password.toString());
+        Subscription fieldValidationSubscription = Observable.combineLatest(userObservable, emailObservable, passwordObservable,
+                (user, email, password) -> {
+                    boolean isEmailValid = validateEmail(email.toString()) && email.toString().equals(user.getEmail());
+                    boolean isPasswordValid = validatePassword(password.toString()) && email.toString().equals(user.getPassword());
 
                     return isEmailValid && isPasswordValid;
                 })
@@ -154,9 +147,15 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (mCompositeSubscription.isUnsubscribed()) {
+        if (mCompositeSubscription.isUnsubscribed())  {
             mCompositeSubscription.unsubscribe();
         }
+    }
+
+
+    @Override
+    public int getLayout() {
+        return R.layout.activity_login;
     }
 
     /**

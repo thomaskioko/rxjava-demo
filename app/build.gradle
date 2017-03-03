@@ -1,10 +1,11 @@
 apply plugin: 'com.android.application'
-apply plugin: 'realm-android'
+apply plugin: "com.neenbedankt.android-apt"
 apply plugin: 'me.tatarka.retrolambda'
+apply plugin: 'realm-android'
 
 android {
     compileSdkVersion 25
-    buildToolsVersion "25.0.1"
+    buildToolsVersion "25.0.2"
     defaultConfig {
         applicationId "com.thomaskioko.lambdademo"
         minSdkVersion 14
@@ -34,16 +35,20 @@ retrolambda {
     incremental true
 }
 
+ext.supportLibVersion = '25.2.0'
+ext.daggerVersion = '2.8'
+ext.stethoVersion = '1.4.2'
+
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
-    compile 'com.android.support:appcompat-v7:25.1.0'
-    compile 'com.android.support:design:25.1.0'
+    compile "com.android.support:appcompat-v7:$supportLibVersion"
+    compile "com.android.support:design:$supportLibVersion"
 
-    compile 'com.jakewharton:butterknife:8.5.1'
-    annotationProcessor 'com.jakewharton:butterknife-compiler:8.5.1'
+    compile 'com.jakewharton:butterknife:7.0.0'
+//    annotationProcessor 'com.jakewharton:butterknife-compiler:8.5.1'
 
     compile 'io.reactivex:rxjava:1.1.2' // RxJava
     compile 'io.reactivex:rxandroid:1.1.0' // RxAndroid providing Android Scheduler
@@ -51,7 +56,14 @@ dependencies {
 
     compile 'com.jakewharton.timber:timber:4.5.1'
 
-    compile 'com.facebook.stetho:stetho:1.4.2'
+    compile "com.facebook.stetho:stetho:$stethoVersion"
+
+    //Dagger
+    apt "com.google.dagger:dagger-compiler:$daggerVersion"
+    compile "com.google.dagger:dagger:$daggerVersion"
+    annotationProcessor "com.google.dagger:dagger-compiler:$daggerVersion"
+    compile 'org.glassfish:javax.annotation:10.0-b28'
+    compile 'javax.inject:javax.inject:1'
 
     testCompile 'junit:junit:4.12'
 }
