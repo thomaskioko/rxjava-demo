@@ -7,6 +7,7 @@ import android.support.v7.app.AppCompatActivity;
 import com.thomaskioko.lambdademo.LambdaApp;
 import com.thomaskioko.lambdademo.di.compoments.ActivityComponent;
 import com.thomaskioko.lambdademo.di.compoments.DaggerActivityComponent;
+import com.thomaskioko.lambdademo.domain.DataManager;
 
 import javax.inject.Inject;
 
@@ -20,6 +21,9 @@ public abstract class BaseActivity extends AppCompatActivity {
 
     @Inject
     Realm mRealm;
+
+    @Inject
+    DataManager mDataManager;
 
     private ActivityComponent mActivityComponent;
 
