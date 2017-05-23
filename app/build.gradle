@@ -26,6 +26,11 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+
+    packagingOptions {
+        exclude 'META-INF/LICENSE'
+        exclude 'META-INF/rxjava.properties'
+    }
 }
 
 retrolambda {
@@ -38,6 +43,7 @@ retrolambda {
 ext.supportLibVersion = '25.2.0'
 ext.daggerVersion = '2.8'
 ext.stethoVersion = '1.4.2'
+ext.retrofitVersion = '2.1.0'
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
@@ -48,7 +54,6 @@ dependencies {
     compile "com.android.support:design:$supportLibVersion"
 
     compile 'com.jakewharton:butterknife:7.0.0'
-//    annotationProcessor 'com.jakewharton:butterknife-compiler:8.5.1'
 
     compile 'io.reactivex:rxjava:1.1.2' // RxJava
     compile 'io.reactivex:rxandroid:1.1.0' // RxAndroid providing Android Scheduler
@@ -57,6 +62,14 @@ dependencies {
     compile 'com.jakewharton.timber:timber:4.5.1'
 
     compile "com.facebook.stetho:stetho:$stethoVersion"
+    compile "com.facebook.stetho:stetho-okhttp3:$stethoVersion"
+
+    compile 'com.squareup.retrofit2:retrofit:2.1.0'
+    compile 'com.squareup.retrofit2:converter-jackson:2.1.0'
+    compile 'com.squareup.retrofit2:converter-gson:2.1.0'
+    compile 'com.squareup.retrofit2:adapter-rxjava2:2.2.0'
+    compile 'com.squareup.okhttp3:okhttp:3.4.1'
+    compile 'com.squareup.okhttp3:logging-interceptor:3.4.1'
 
     //Dagger
     apt "com.google.dagger:dagger-compiler:$daggerVersion"
@@ -66,4 +79,8 @@ dependencies {
     compile 'javax.inject:javax.inject:1'
 
     testCompile 'junit:junit:4.12'
+//    androidTestCompile 'com.squareup.spoon:spoon-client:1.2.0'
+//    androidTestCompile 'com.squareup.retrofit2:retrofit-mock:2.1.0'
+//    androidTestCompile ('com.squareup.okhttp:mockwebserver:2.7.0')
+
 }
