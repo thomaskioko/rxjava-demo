@@ -19,8 +19,8 @@ import com.thomaskioko.lambdademo.model.User;
 
 import java.util.concurrent.TimeUnit;
 
-import butterknife.BindInt;
 import butterknife.Bind;
+import butterknife.BindInt;
 import butterknife.ButterKnife;
 import rx.Observable;
 import rx.Subscription;
@@ -73,7 +73,7 @@ public class LoginActivity extends BaseActivity {
             actionBar.setTitle(getString(R.string.title_sign_in));
         }
 
-
+        //TODO:: Move to viewmodel
         Observable<User> userObservable = mRealm.asObservable()
                 .map(realm -> realm.where(User.class).findAll().first())
                 .filter(user -> user != null)
@@ -114,7 +114,6 @@ public class LoginActivity extends BaseActivity {
                 });
 
 
-
         mCompositeSubscription.add(userEmailSubscription);
         mCompositeSubscription.add(passwordSubscription);
 
@@ -147,7 +146,7 @@ public class LoginActivity extends BaseActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (mCompositeSubscription.isUnsubscribed())  {
+        if (mCompositeSubscription.isUnsubscribed()) {
             mCompositeSubscription.unsubscribe();
         }
     }
